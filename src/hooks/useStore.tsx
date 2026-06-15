@@ -1,7 +1,6 @@
 import {
   createContext,
   useContext,
-  useMemo,
   useState,
   type PropsWithChildren,
 } from 'react'
@@ -78,25 +77,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
     )
   }
 
-  const value = useMemo<StoreContextValue>(() => {
-    const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
-    const subtotal = cart.reduce((sum, item) => {
-      const product = products.find((entry) => entry.id === item.productId)
-      return sum + (product ? product.price * item.quantity : 0)
-    }, 0)
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const subtotal = cart.reduce((sum, item) => {
+    const product = products.find((entry) => entry.id === item.productId)
+    return sum + (product ? product.price * item.quantity : 0)
+  }, 0)
 
-    return {
-      cart,
-      wishlist,
-      cartCount,
-      subtotal,
-      addToCart,
-      updateCartItem,
-      removeCartItem,
-      toggleWishlist,
-      isWishlisted: (productId: string) => wishlist.includes(productId),
-    }
-  }, [cart, wishlist])
+  const value: StoreContextValue = {
+    cart,
+    wishlist,
+    cartCount,
+    subtotal,
+    addToCart,
+    updateCartItem,
+    removeCartItem,
+    toggleWishlist,
+    isWishlisted: (productId: string) => wishlist.includes(productId),
+  }
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
