@@ -115,6 +115,78 @@ describe('auth routes', () => {
     expect(response.body.data.user.role).toBe('user')
   })
 
+  it('rejects duplicate signups', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce({
+      id: 'user_1',
+      name: 'Existing User',
+      email: 'user@example.com',
+      role: 'USER',
+    })
+
+    const response = await request(app).post('/api/auth/signup').send({
+      name: 'Existing User',
+      email: 'user@example.com',
+      password: 'strong-pass',
+      role: 'user',
+    })
+
+    expect(response.status).toBe(409)
+    expect(response.body).toEqual({
+      success: false,
+      message: 'An account with that email already exists.',
+    })
+  })
+
+  it('rejects invalid login credentials and mismatched roles', async () => {
+    const passwordHash = await bcrypt.hash('strong-pass', 12)
+
+    mockPrisma.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'user_1',
+        name: 'Manthan User',
+        email: 'user@example.com',
+        role: 'USER',
+        passwordHash,
+      })
+      .mockResolvedValueOnce({
+        id: 'admin_1',
+        name: 'Admin User',
+        email: 'admin@example.com',
+        role: 'ADMIN',
+        passwordHash,
+      })
+
+    const missingUserResponse = await request(app).post('/api/auth/login').send({
+      email: 'missing@example.com',
+      password: 'strong-pass',
+      role: 'user',
+    })
+
+    expect(missingUserResponse.status).toBe(401)
+    expect(missingUserResponse.body.message).toBe('Invalid email or password.')
+
+    const wrongPasswordResponse = await request(app).post('/api/auth/login').send({
+      email: 'user@example.com',
+      password: 'wrong-pass',
+      role: 'user',
+    })
+
+    expect(wrongPasswordResponse.status).toBe(401)
+    expect(wrongPasswordResponse.body.message).toBe('Invalid email or password.')
+
+    const wrongRoleResponse = await request(app).post('/api/auth/login').send({
+      email: 'admin@example.com',
+      password: 'strong-pass',
+      role: 'user',
+    })
+
+    expect(wrongRoleResponse.status).toBe(403)
+    expect(wrongRoleResponse.body.message).toBe(
+      'That account does not match the selected role.',
+    )
+  })
+
   it('returns the authenticated user for /me', async () => {
     const token = signAuthToken({
       id: 'user_1',
@@ -144,6 +216,26 @@ describe('auth routes', () => {
           role: 'user',
         },
       },
+    })
+  })
+
+  it('fails /me when the token is valid but the user no longer exists', async () => {
+    const token = signAuthToken({
+      id: 'missing_user',
+      email: 'missing@example.com',
+      role: 'USER',
+    })
+
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
+
+    const response = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${token}`)
+
+    expect(response.status).toBe(401)
+    expect(response.body).toEqual({
+      success: false,
+      message: 'Authentication required.',
     })
   })
 
