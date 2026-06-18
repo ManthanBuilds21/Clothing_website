@@ -1,9 +1,13 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
-import { asyncHandler, ApiError } from '../lib/http.js'
+import { asyncHandler, ApiError, sendSuccess } from '../lib/http.js'
 import { categories, serializeCollection, serializeProduct } from '../lib/catalog.js'
+import { z } from 'zod'
 
 const router = Router()
+const productSlugParamsSchema = z.object({
+  slug: z.string().trim().min(1),
+})
 
 router.get(
   '/',
@@ -20,7 +24,7 @@ router.get(
       }),
     ])
 
-    response.json({
+    sendSuccess(response, {
       categories,
       collections: collections.map(serializeCollection),
       products: products.map(serializeProduct),
@@ -31,7 +35,7 @@ router.get(
 router.get(
   '/products/:slug',
   asyncHandler(async (request, response) => {
-    const slug = String(request.params.slug)
+    const { slug } = productSlugParamsSchema.parse(request.params)
 
     const product = await prisma.product.findUnique({
       where: {
@@ -46,7 +50,7 @@ router.get(
       throw new ApiError(404, 'Product not found.')
     }
 
-    response.json({
+    sendSuccess(response, {
       product: serializeProduct(product),
     })
   }),

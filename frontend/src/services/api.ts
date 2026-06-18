@@ -1,4 +1,5 @@
 import type { AuthSession } from '../types/api'
+import { env } from '../config/env'
 
 const SESSION_STORAGE_KEY = 'manthan.session'
 
@@ -8,7 +9,15 @@ interface RequestOptions {
   token?: string
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
+interface SuccessResponse<T> {
+  success: true
+  data: T
+}
+
+interface FailureResponse {
+  success: false
+  message: string
+}
 
 export class ApiError extends Error {
   constructor(
@@ -30,19 +39,29 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
     headers.set('Authorization', `Bearer ${options.token}`)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${env.apiUrl}${path}`, {
     method: options.method ?? 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
 
-  const payload = (await response.json().catch(() => null)) as { message?: string } | null
+  const payload = (await response.json().catch(() => null)) as
+    | SuccessResponse<T>
+    | FailureResponse
+    | null
 
   if (!response.ok) {
-    throw new ApiError(payload?.message ?? 'Request failed.', response.status)
+    throw new ApiError(
+      payload && 'message' in payload ? payload.message : 'Request failed.',
+      response.status,
+    )
   }
 
-  return payload as T
+  if (!payload || !('success' in payload) || payload.success !== true) {
+    throw new ApiError('Malformed API response.', response.status)
+  }
+
+  return payload.data
 }
 
 export function getStoredSession() {

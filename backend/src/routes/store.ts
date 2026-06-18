@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
-import { asyncHandler, ApiError } from '../lib/http.js'
+import { asyncHandler, ApiError, sendSuccess } from '../lib/http.js'
 import { authenticate } from '../middleware/auth.js'
 import { buildStoreSnapshot, createOrderFromCart } from '../services/store.js'
 
@@ -41,7 +41,7 @@ async function getProductOrThrow(productId: string) {
 router.get(
   '/',
   asyncHandler(async (request, response) => {
-    response.json(await buildStoreSnapshot(request.auth!.userId))
+    sendSuccess(response, await buildStoreSnapshot(request.auth!.userId))
   }),
 )
 
@@ -76,7 +76,7 @@ router.post(
       },
     })
 
-    response.status(201).json(await buildStoreSnapshot(request.auth!.userId))
+    sendSuccess(response, await buildStoreSnapshot(request.auth!.userId), 201)
   }),
 )
 
@@ -103,7 +103,7 @@ router.patch(
       },
     })
 
-    response.json(await buildStoreSnapshot(request.auth!.userId))
+    sendSuccess(response, await buildStoreSnapshot(request.auth!.userId))
   }),
 )
 
@@ -120,7 +120,7 @@ router.delete(
       },
     })
 
-    response.json(await buildStoreSnapshot(request.auth!.userId))
+    sendSuccess(response, await buildStoreSnapshot(request.auth!.userId))
   }),
 )
 
@@ -157,14 +157,14 @@ router.post(
       })
     }
 
-    response.json(await buildStoreSnapshot(request.auth!.userId))
+    sendSuccess(response, await buildStoreSnapshot(request.auth!.userId))
   }),
 )
 
 router.post(
   '/checkout',
   asyncHandler(async (request, response) => {
-    response.status(201).json(await createOrderFromCart(request.auth!.userId))
+    sendSuccess(response, await createOrderFromCart(request.auth!.userId), 201)
   }),
 )
 

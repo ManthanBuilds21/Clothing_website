@@ -2,29 +2,41 @@ import type { NextFunction, Request, Response } from 'express'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { ZodError } from 'zod'
 import { config } from '../config.js'
-import { ApiError } from '../lib/http.js'
+import { ApiError, type FailureResponse } from '../lib/http.js'
+import { writeErrorLog } from '../lib/logger.js'
+
+function sendFailure(
+  response: Response,
+  statusCode: number,
+  payload: FailureResponse,
+) {
+  response.status(statusCode).json(payload)
+}
 
 export function notFoundHandler(_request: Request, response: Response) {
-  response.status(404).json({
+  sendFailure(response, 404, {
+    success: false,
     message: 'Route not found.',
   })
 }
 
 export function errorHandler(
   error: unknown,
-  _request: Request,
+  request: Request,
   response: Response,
   _next: NextFunction,
 ) {
   if (error instanceof ApiError) {
-    response.status(error.statusCode).json({
+    sendFailure(response, error.statusCode, {
+      success: false,
       message: error.message,
     })
     return
   }
 
   if (error instanceof ZodError) {
-    response.status(400).json({
+    sendFailure(response, 400, {
+      success: false,
       message: 'Validation failed.',
       issues: error.issues,
     })
@@ -32,16 +44,29 @@ export function errorHandler(
   }
 
   if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-    response.status(404).json({
+    sendFailure(response, 404, {
+      success: false,
       message: 'The requested record could not be found.',
     })
     return
   }
 
-  console.error(error)
+  const detail = error instanceof Error ? error.message : 'Unknown error.'
+  const stack = error instanceof Error ? error.stack : undefined
+  const errorLogEntry = JSON.stringify({
+    timestamp: new Date().toISOString(),
+    method: request.method,
+    path: request.originalUrl,
+    detail,
+    stack,
+  })
 
-  response.status(500).json({
+  console.error(error)
+  writeErrorLog(errorLogEntry)
+
+  sendFailure(response, 500, {
+    success: false,
     message: 'Internal server error.',
-    ...(config.nodeEnv === 'production' ? {} : { detail: error instanceof Error ? error.message : 'Unknown error.' }),
+    ...(config.nodeEnv === 'production' ? {} : { detail }),
   })
 }

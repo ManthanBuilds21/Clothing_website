@@ -1,6 +1,6 @@
 import { Router } from 'express'
+import { asyncHandler, sendSuccess } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
-import { asyncHandler } from '../lib/http.js'
 import { authenticate, requireRole } from '../middleware/auth.js'
 
 const router = Router()
@@ -40,7 +40,7 @@ router.get(
       }),
     ])
 
-    response.json({
+    sendSuccess(response, {
       orderCount,
       userCount,
       collectionCount,

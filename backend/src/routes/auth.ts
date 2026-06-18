@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt'
 import { Router } from 'express'
 import { z } from 'zod'
+import { asyncHandler, ApiError, sendSuccess } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
-import { asyncHandler, ApiError } from '../lib/http.js'
+import { loginRateLimiter } from '../middleware/rateLimit.js'
 import { authenticate } from '../middleware/auth.js'
 import { signAuthToken, toClientRole } from '../lib/auth.js'
 
@@ -53,15 +54,20 @@ router.post(
       },
     })
 
-    response.status(201).json({
-      token: signAuthToken(user),
-      user: serializeUser(user),
-    })
+    sendSuccess(
+      response,
+      {
+        token: signAuthToken(user),
+        user: serializeUser(user),
+      },
+      201,
+    )
   }),
 )
 
 router.post(
   '/login',
+  loginRateLimiter,
   asyncHandler(async (request, response) => {
     const payload = loginSchema.parse(request.body)
     const user = await prisma.user.findUnique({
@@ -84,7 +90,7 @@ router.post(
       throw new ApiError(403, 'That account does not match the selected role.')
     }
 
-    response.json({
+    sendSuccess(response, {
       token: signAuthToken(user),
       user: serializeUser(user),
     })
@@ -105,7 +111,7 @@ router.get(
       throw new ApiError(401, 'Authentication required.')
     }
 
-    response.json({
+    sendSuccess(response, {
       user: serializeUser(user),
     })
   }),

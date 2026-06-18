@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { asyncHandler, sendSuccess } from '../lib/http.js'
 import { prisma } from '../lib/prisma.js'
-import { asyncHandler } from '../lib/http.js'
 
 const router = Router()
 
@@ -24,9 +24,9 @@ router.post(
       },
     })
 
-    response.status(201).json({
+    sendSuccess(response, {
       email: subscriber.email,
-    })
+    }, 201)
   }),
 )
 

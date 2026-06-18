@@ -1,0 +1,5 @@
+process.env.NODE_ENV = 'test'
+process.env.JWT_SECRET = 'test-secret'
+process.env.CLIENT_ORIGIN = 'http://localhost:5173'
+process.env.CORS_ORIGINS = 'http://localhost:5173'
+process.env.AUTH_RATE_LIMIT_MAX_REQUESTS = '100'
