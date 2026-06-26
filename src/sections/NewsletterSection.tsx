@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import Reveal from '../components/ui/Reveal'
 import { ApiError, subscribeToNewsletter } from '../lib/api'
+import { useToast } from '../hooks/useToast'
 
 export default function NewsletterSection() {
+  const toast = useToast()
   const [email, setEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -29,9 +31,10 @@ export default function NewsletterSection() {
               void subscribeToNewsletter(email)
                 .then(() => {
                   setEmail('')
+                  toast.success('You\'re subscribed! Expect early access to our next drop.')
                 })
                 .catch((error) => {
-                  window.alert(
+                  toast.error(
                     error instanceof ApiError
                       ? error.message
                       : 'We could not save your subscription right now.',

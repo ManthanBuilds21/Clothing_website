@@ -1,14 +1,18 @@
 import { ArrowRight, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import QuantitySelector from '../../components/ui/QuantitySelector'
 import Reveal from '../../components/ui/Reveal'
+import SEO from '../../components/seo/SEO'
 import { useCatalog } from '../../hooks/useCatalog'
 import { useStore } from '../../hooks/useStore'
+import { useToast } from '../../hooks/useToast'
 import { formatPrice } from '../../utils/format'
 
 export default function CartPage() {
+  const navigate = useNavigate()
+  const toast = useToast()
   const { products, isLoading: isCatalogLoading } = useCatalog()
-  const { cart, subtotal, updateCartItem, removeCartItem, checkout, isMutating } = useStore()
+  const { cart, subtotal, updateCartItem, removeCartItem, isGuest, isMutating } = useStore()
   const shipping = cart.length === 0 || subtotal >= 180 ? 0 : 18
   const total = subtotal + shipping
 
@@ -27,6 +31,7 @@ export default function CartPage() {
 
   return (
     <div className="page-shell pb-8">
+      <SEO title="MANTHAN | Shopping Cart" description="Review your selected items and proceed to checkout." />
       <Reveal className="section-frame">
         <p className="eyebrow">Cart</p>
         <h1 className="mt-5 text-[4rem] leading-[0.86] sm:text-[6rem] lg:text-[8rem]">
@@ -80,6 +85,7 @@ export default function CartPage() {
                       <QuantitySelector
                         value={item.quantity}
                         onChange={(value) => void updateCartItem(item.productId, item.size, value)}
+                        max={product.stockBySize?.[item.size] ?? 99}
                       />
                       <button
                         type="button"
@@ -117,11 +123,11 @@ export default function CartPage() {
 
             <button
               type="button"
-              onClick={async () => {
-                const order = await checkout()
-
-                if (order) {
-                  window.alert(`Order ${order.id} created successfully.`)
+              onClick={() => {
+                if (isGuest) {
+                  toast.info('Please log in to complete your purchase.')
+                } else {
+                  navigate('/checkout')
                 }
               }}
               disabled={isMutating}

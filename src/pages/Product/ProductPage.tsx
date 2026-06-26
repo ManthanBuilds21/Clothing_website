@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import ProductCard from '../../components/cards/ProductCard'
 import QuantitySelector from '../../components/ui/QuantitySelector'
 import Reveal from '../../components/ui/Reveal'
+import SEO from '../../components/seo/SEO'
 import { shippingHighlights } from '../../data/catalog'
 import { getProductBySlug as getProductBySlugRequest } from '../../lib/api'
 import { useCatalog } from '../../hooks/useCatalog'
@@ -61,6 +62,11 @@ export default function ProductPage() {
 
   return (
     <div className="page-shell pb-8">
+      <SEO 
+        title={`MANTHAN | ${product.name}`}
+        description={product.shortDescription}
+        image={product.images[0]}
+      />
       <div className="section-frame grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <Reveal className="grid gap-4 lg:grid-cols-[110px_1fr]">
           <div className="order-2 flex gap-3 overflow-auto lg:order-1 lg:flex-col">
@@ -123,19 +129,28 @@ export default function ProductPage() {
             <div className="mt-4 flex flex-wrap gap-3">
               {product.sizes.map((size) => {
                 const active = size === selectedSize
+                const inStock = product.stockBySize?.[size] !== undefined ? product.stockBySize[size] > 0 : true
 
                 return (
                   <button
                     key={size}
                     type="button"
+                    disabled={!inStock}
                     onClick={() => setSelectedSize(size)}
-                    className={`rounded-full px-5 py-3 text-xs font-semibold uppercase tracking-[0.24em] transition-colors ${
-                      active
+                    className={`relative overflow-hidden rounded-full px-5 py-3 text-xs font-semibold uppercase tracking-[0.24em] transition-colors ${
+                      !inStock
+                        ? 'border border-black/[0.05] bg-black/[0.02] text-black/30 cursor-not-allowed'
+                        : active
                         ? 'bg-black text-white'
                         : 'border border-black/10 bg-black/[0.02] text-black/70 hover:text-black'
                     }`}
                   >
                     {size}
+                    {!inStock && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="h-px w-full bg-black/20 rotate-[-12deg]" />
+                      </div>
+                    )}
                   </button>
                 )
               })}
@@ -143,18 +158,24 @@ export default function ProductPage() {
           </div>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <QuantitySelector value={quantity} onChange={setQuantity} />
+            <QuantitySelector 
+              value={quantity} 
+              onChange={setQuantity} 
+              max={product.stockBySize?.[selectedSize] ?? 99}
+            />
             <button
               type="button"
-              onClick={() => void addToCart(product.id, activeSize, quantity)}
-              className="button-primary flex-1"
+              disabled={isMutating || (product.stockBySize?.[selectedSize] === 0)}
+              onClick={() => void addToCart(product.id, selectedSize, quantity)}
+              className="button-primary flex-1 justify-center sm:justify-start"
             >
               <ShoppingBag className="mr-2 h-4 w-4" />
-              Add to cart
+              {product.stockBySize?.[selectedSize] === 0 ? 'Out of Stock' : 'Add to cart'}
             </button>
             <button
               type="button"
               onClick={() => void toggleWishlist(product.id)}
+              disabled={isMutating}
               className={`flex items-center justify-center rounded-full border px-5 py-4 text-xs font-semibold uppercase tracking-[0.24em] transition-colors ${
                 isWishlisted(product.id)
                   ? 'border-black bg-black text-white'

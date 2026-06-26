@@ -58,5 +58,6 @@ export function serializeProduct(
     sizes: product.sizes,
     features: product.features,
     images: product.images,
+    stockBySize: product.stockBySize as Record<string, number>,
   }
 }

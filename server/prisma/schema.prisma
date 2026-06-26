@@ -34,6 +34,7 @@ model User {
   cartItems    CartItem[]
   wishlist     WishlistItem[]
   orders       Order[]
+  addresses    Address[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -81,6 +82,7 @@ model Product {
   sizes            String[]
   features         String[]
   images           String[]
+  stockBySize      Json           @default("{}")
   sortOrder        Int            @default(0)
   cartItems        CartItem[]
   wishlistItems    WishlistItem[]
@@ -127,10 +129,14 @@ model Order {
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(UNPAID)
   paymentProvider String?
+  addressId       String?
+  razorpayOrderId String?
+  razorpayPaymentId String?
   subtotal        Int
   shipping        Int
   total           Int
   user            User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  address         Address?      @relation(fields: [addressId], references: [id], onDelete: SetNull)
   items           OrderItem[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -163,4 +169,24 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 
   @@map("newsletter_subscribers")
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  street     String
+  city       String
+  state      String
+  postalCode String
+  country    String   @default("India")
+  phone      String
+  isDefault  Boolean  @default(false)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
 }

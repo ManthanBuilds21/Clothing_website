@@ -1,8 +1,10 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from 'react'
@@ -11,12 +13,59 @@ import {
   ApiError,
   checkoutRequest,
   getStore,
+  mergeGuestCart,
   removeCartItemRequest,
   toggleWishlistRequest,
   updateCartItemRequest,
 } from '../lib/api'
 import { useAuth } from './useAuth'
+import { useToast } from './useToast'
 import type { CartItem, CheckoutOrder, StoreSnapshot } from '../types/api'
+
+// ─── Guest storage ────────────────────────────────────────────────────────────
+
+const GUEST_KEY = 'manthan.guest_cart'
+
+interface GuestStore {
+  cart: CartItem[]
+  wishlist: string[]
+}
+
+function loadGuest(): GuestStore {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY)
+    if (!raw) return { cart: [], wishlist: [] }
+    return JSON.parse(raw) as GuestStore
+  } catch {
+    return { cart: [], wishlist: [] }
+  }
+}
+
+function saveGuest(store: GuestStore) {
+  try {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(store))
+  } catch {
+    // storage full — ignore
+  }
+}
+
+function clearGuest() {
+  localStorage.removeItem(GUEST_KEY)
+}
+
+function computeGuestSnapshot(guest: GuestStore): StoreSnapshot {
+  const cartCount = guest.cart.reduce((s, i) => s + i.quantity, 0)
+  // We don't have prices client-side here — subtotal stays 0 for guests
+  // The cart page resolves prices from the catalog, so this is fine.
+  return {
+    cart: guest.cart,
+    wishlist: guest.wishlist,
+    cartCount,
+    subtotal: 0,
+  }
+}
+
+// ─── Context types ────────────────────────────────────────────────────────────
 
 interface StoreContextValue {
   cart: CartItem[]
@@ -25,6 +74,7 @@ interface StoreContextValue {
   subtotal: number
   isLoading: boolean
   isMutating: boolean
+  isGuest: boolean
   addToCart: (productId: string, size: string, quantity: number) => Promise<boolean>
   updateCartItem: (productId: string, size: string, quantity: number) => Promise<boolean>
   removeCartItem: (productId: string, size: string) => Promise<boolean>
@@ -42,130 +92,183 @@ const emptyStore: StoreSnapshot = {
   subtotal: 0,
 }
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function StoreProvider({ children }: PropsWithChildren) {
   const { logout, session, isReady } = useAuth()
+  const toast = useToast()
   const [store, setStore] = useState<StoreSnapshot>(emptyStore)
   const [isLoading, setIsLoading] = useState(true)
   const [isMutating, setIsMutating] = useState(false)
+  const mergeAttempted = useRef(false)
 
+  // On session change: load server store (and merge guest cart on first login)
   useEffect(() => {
-    if (!isReady) {
-      return
-    }
+    if (!isReady) return
 
     if (!session) {
-      setStore(emptyStore)
+      // Guest mode — load from localStorage
+      setStore(computeGuestSnapshot(loadGuest()))
       setIsLoading(false)
+      mergeAttempted.current = false
       return
     }
 
     setIsLoading(true)
 
-    void getStore(session.token)
-      .then((snapshot) => {
-        setStore(snapshot)
-      })
+    const doLoad = async () => {
+      // Merge guest cart items into server cart on first login
+      if (!mergeAttempted.current) {
+        mergeAttempted.current = true
+        const guest = loadGuest()
+        if (guest.cart.length > 0) {
+          try {
+            await mergeGuestCart(session.token, guest.cart)
+          } catch {
+            // Non-fatal — server cart takes precedence
+          }
+          clearGuest()
+        }
+      }
+
+      const snapshot = await getStore(session.token)
+      setStore(snapshot)
+    }
+
+    void doLoad()
       .catch((error) => {
         console.error(error)
-
-        if (error instanceof ApiError && error.status === 401) {
-          logout()
-        }
-
+        if (error instanceof ApiError && error.status === 401) logout()
         setStore(emptyStore)
       })
-      .finally(() => {
-        setIsLoading(false)
-      })
+      .finally(() => setIsLoading(false))
   }, [isReady, logout, session])
 
-  const requireToken = (message: string) => {
-    if (!session?.token) {
-      window.alert(message)
-      return null
+  // ─── Guest mutations ─────────────────────────────────────────────────────
+
+  const guestAddToCart = useCallback((productId: string, size: string, quantity: number): boolean => {
+    const guest = loadGuest()
+    const existing = guest.cart.find((i) => i.productId === productId && i.size === size)
+    if (existing) {
+      existing.quantity += quantity
+    } else {
+      guest.cart.push({ productId, size, quantity })
     }
+    saveGuest(guest)
+    setStore(computeGuestSnapshot(guest))
+    return true
+  }, [])
 
-    return session.token
-  }
+  const guestUpdateCartItem = useCallback((productId: string, size: string, quantity: number): boolean => {
+    const guest = loadGuest()
+    const item = guest.cart.find((i) => i.productId === productId && i.size === size)
+    if (item) item.quantity = quantity
+    saveGuest(guest)
+    setStore(computeGuestSnapshot(guest))
+    return true
+  }, [])
 
-  const handleMutationError = (error: unknown, fallbackMessage: string) => {
+  const guestRemoveCartItem = useCallback((productId: string, size: string): boolean => {
+    const guest = loadGuest()
+    guest.cart = guest.cart.filter((i) => !(i.productId === productId && i.size === size))
+    saveGuest(guest)
+    setStore(computeGuestSnapshot(guest))
+    return true
+  }, [])
+
+  const guestToggleWishlist = useCallback((productId: string): boolean => {
+    const guest = loadGuest()
+    const idx = guest.wishlist.indexOf(productId)
+    if (idx === -1) {
+      guest.wishlist.push(productId)
+    } else {
+      guest.wishlist.splice(idx, 1)
+    }
+    saveGuest(guest)
+    setStore(computeGuestSnapshot(guest))
+    return true
+  }, [])
+
+  // ─── Server mutation helper ──────────────────────────────────────────────
+
+  const handleMutationError = useCallback((error: unknown, fallbackMessage: string) => {
     console.error(error)
-
     if (error instanceof ApiError && error.status === 401) {
       logout()
-      window.alert('Your session expired. Please log in again.')
+      toast.error('Your session expired. Please log in again.')
       return
     }
+    toast.error(fallbackMessage)
+  }, [logout, toast])
 
-    window.alert(fallbackMessage)
-  }
+  const runServerMutation = useCallback(async (
+    fallbackMessage: string,
+    action: (token: string) => Promise<StoreSnapshot>,
+  ): Promise<boolean> => {
+    if (!session?.token) return false
+    setIsMutating(true)
+    try {
+      const nextStore = await action(session.token)
+      setStore(nextStore)
+      return true
+    } catch (error) {
+      handleMutationError(error, fallbackMessage)
+      return false
+    } finally {
+      setIsMutating(false)
+    }
+  }, [handleMutationError, session])
+
+  // ─── Unified API ─────────────────────────────────────────────────────────
 
   const value = useMemo<StoreContextValue>(() => {
-    const runMutation = async (
-      message: string,
-      fallbackMessage: string,
-      action: (token: string) => Promise<StoreSnapshot>,
-    ) => {
-      const token = requireToken(message)
-
-      if (!token) {
-        return false
-      }
-
-      setIsMutating(true)
-
-      try {
-        const nextStore = await action(token)
-        setStore(nextStore)
-        return true
-      } catch (error) {
-        handleMutationError(error, fallbackMessage)
-        return false
-      } finally {
-        setIsMutating(false)
-      }
-    }
+    const isGuest = !session
 
     return {
       ...store,
       isLoading,
       isMutating,
-      addToCart: (productId, size, quantity) =>
-        runMutation(
-          'Please log in to save products to your cart.',
+      isGuest,
+      addToCart: async (productId, size, quantity) => {
+        if (isGuest) return guestAddToCart(productId, size, quantity)
+        return runServerMutation(
           'We could not update your cart right now.',
           (token) => addCartItem(token, { productId, size, quantity }),
-        ),
-      updateCartItem: (productId, size, quantity) =>
-        runMutation(
-          'Please log in to update your cart.',
+        )
+      },
+      updateCartItem: async (productId, size, quantity) => {
+        if (isGuest) return guestUpdateCartItem(productId, size, quantity)
+        return runServerMutation(
           'We could not update your cart right now.',
           (token) => updateCartItemRequest(token, { productId, size, quantity }),
-        ),
-      removeCartItem: (productId, size) =>
-        runMutation(
-          'Please log in to update your cart.',
+        )
+      },
+      removeCartItem: async (productId, size) => {
+        if (isGuest) return guestRemoveCartItem(productId, size)
+        return runServerMutation(
           'We could not remove that cart item right now.',
           (token) => removeCartItemRequest(token, { productId, size }),
-        ),
-      toggleWishlist: (productId) =>
-        runMutation(
-          'Please log in to save products to your wishlist.',
+        )
+      },
+      toggleWishlist: async (productId) => {
+        if (isGuest) return guestToggleWishlist(productId)
+        return runServerMutation(
           'We could not update your wishlist right now.',
           (token) => toggleWishlistRequest(token, { productId }),
-        ),
+        )
+      },
       isWishlisted: (productId) => store.wishlist.includes(productId),
       checkout: async () => {
-        const token = requireToken('Please log in before checking out.')
-
-        if (!token) {
+        if (isGuest) {
+          toast.info('Please log in to complete your purchase.')
           return null
         }
 
+        if (!session?.token) return null
         setIsMutating(true)
 
         try {
-          const response = await checkoutRequest(token)
+          const response = await checkoutRequest(session.token)
           setStore(response.store)
           return response.order
         } catch (error) {
@@ -176,7 +279,19 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
       },
     }
-  }, [isLoading, isMutating, logout, session, store])
+  }, [
+    guestAddToCart,
+    guestRemoveCartItem,
+    guestToggleWishlist,
+    guestUpdateCartItem,
+    handleMutationError,
+    isLoading,
+    isMutating,
+    runServerMutation,
+    session,
+    store,
+    toast,
+  ])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

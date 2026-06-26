@@ -184,6 +184,57 @@ export async function checkoutRequest(token: string) {
   })
 }
 
+export async function mergeGuestCart(
+  token: string,
+  items: Array<{ productId: string; size: string; quantity: number }>,
+) {
+  return request<StoreSnapshot>('/store/cart/merge', {
+    method: 'POST',
+    token,
+    body: { items },
+  })
+}
+
+export async function saveAddressRequest(token: string, payload: any) {
+  return request<{ address: any }>('/checkout/address', {
+    method: 'POST',
+    token,
+    body: payload,
+  })
+}
+
+export async function initiateCheckoutRequest(token: string, addressId: string) {
+  return request<any>('/checkout/initiate', {
+    method: 'POST',
+    token,
+    body: { addressId },
+  })
+}
+
+export async function verifyCheckoutRequest(token: string, payload: any) {
+  return request<{ orderId: string }>('/checkout/verify', {
+    method: 'POST',
+    token,
+    body: payload,
+  })
+}
+
+export async function getAccountOrders(token: string) {
+  return request<{ orders: any[] }>('/account/orders', { token })
+}
+
+export async function getAccountAddresses(token: string) {
+  return request<{ addresses: any[] }>('/account/addresses', { token })
+}
+
+export async function deleteAccountAddress(token: string, id: string) {
+  return request<{ success: boolean }>('/account/addresses', {
+    method: 'DELETE',
+    token,
+    body: { id },
+  })
+}
+
 export async function subscribeToNewsletter(email: string) {
   return request<{ email: string }>('/newsletter', {
     method: 'POST',

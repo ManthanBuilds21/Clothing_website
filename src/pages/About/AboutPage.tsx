@@ -2,10 +2,15 @@ import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Reveal from '../../components/ui/Reveal'
 import { brandValues, editorialMoments } from '../../data/catalog'
+import SEO from '../../components/seo/SEO'
 
 export default function AboutPage() {
   return (
     <div className="page-shell pb-8">
+      <SEO 
+        title="MANTHAN | About" 
+        description="The story of MANTHAN. We make oversized silhouettes in premium fabrics."
+      />
       <Reveal
         className="section-frame campaign-surface min-h-[560px] overflow-hidden px-5 py-8 text-white sm:px-8 sm:py-10"
         style={{ backgroundColor: '#111111' }}

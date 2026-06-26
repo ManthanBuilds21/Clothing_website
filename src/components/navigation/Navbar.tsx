@@ -1,21 +1,26 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, Menu, ShoppingBag, X } from 'lucide-react'
+import { Heart, LogIn, LogOut, Menu, ShoppingBag, UserRound, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { useStore } from '../../hooks/useStore'
 
-const navigationLinks = [
-  { to: '/', label: 'Entry' },
+const publicLinks = [
   { to: '/website', label: 'Home' },
   { to: '/collections', label: 'Collections' },
   { to: '/about', label: 'About' },
-  { to: '/cart', label: 'Cart' },
-  { to: '/admin', label: 'Admin' },
 ]
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { cartCount, wishlist } = useStore()
+  const { user, isAuthenticated, logout } = useAuth()
+
+  const navLinks = [
+    ...publicLinks,
+    ...(isAuthenticated ? [{ to: '/account', label: 'Account' }] : []),
+    ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin' }] : []),
+  ]
 
   return (
     <>
@@ -27,7 +32,7 @@ export default function Navbar() {
             </Link>
 
             <nav className="hidden items-center gap-8 lg:flex">
-              {navigationLinks.map((item) => (
+              {navLinks.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -37,7 +42,7 @@ export default function Navbar() {
                 >
                   {item.label}
                 </NavLink>
-                ))}
+              ))}
             </nav>
 
             <div className="hidden items-center gap-3 lg:flex">
@@ -52,6 +57,24 @@ export default function Navbar() {
                 <ShoppingBag className="h-4 w-4" />
                 {cartCount}
               </Link>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-black/70 hover:text-black transition-colors"
+                  aria-label="Log out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              ) : (
+                <Link
+                  to="/"
+                  className="flex items-center gap-2 rounded-full border border-black/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-black/70 hover:text-black transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Login
+                </Link>
+              )}
             </div>
 
             <button
@@ -94,7 +117,7 @@ export default function Navbar() {
               </div>
 
               <div className="mt-16 flex flex-1 flex-col gap-6">
-                {navigationLinks.map((item) => (
+                {navLinks.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
@@ -104,6 +127,24 @@ export default function Navbar() {
                     {item.label}
                   </NavLink>
                 ))}
+                {isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => { logout(); setOpen(false) }}
+                    className="font-display text-left text-[2.4rem] leading-[0.92] text-black/50"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <Link
+                    to="/"
+                    onClick={() => setOpen(false)}
+                    className="font-display text-[2.4rem] leading-[0.92] text-black/50"
+                  >
+                    <LogIn className="mb-1 mr-3 inline h-7 w-7" />
+                    Login
+                  </Link>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

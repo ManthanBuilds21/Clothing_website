@@ -9,6 +9,8 @@ import catalogRouter from './routes/catalog.js'
 import newsletterRouter from './routes/newsletter.js'
 import storeRouter from './routes/store.js'
 import adminRouter from './routes/admin.js'
+import checkoutRouter from './routes/checkout.js'
+import accountRouter from './routes/account.js'
 
 const app = express()
 
@@ -28,6 +30,8 @@ app.use('/api/catalog', catalogRouter)
 app.use('/api/newsletter', newsletterRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/checkout', checkoutRouter)
+app.use('/api/account', accountRouter)
 
 app.use((_request, response) => {
   response.status(404).json({

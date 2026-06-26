@@ -1,9 +1,28 @@
+import bcrypt from 'bcrypt'
 import { PrismaClient } from '@prisma/client'
 import { collections, products } from '../../src/data/catalog.ts'
 
 const prisma = new PrismaClient()
 
+const ADMIN_EMAIL = 'admin@manthan.test'
+const ADMIN_PASSWORD = 'admin12345'
+
+function buildStockBySize(sizes: string[]) {
+  return Object.fromEntries(sizes.map((size) => [size, 25]))
+}
+
 async function main() {
+  await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: { role: 'ADMIN' },
+    create: {
+      name: 'Manthan Admin',
+      email: ADMIN_EMAIL,
+      passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 12),
+      role: 'ADMIN',
+    },
+  })
+
   const collectionByName = new Map(collections.map((collection) => [collection.name, collection]))
 
   for (const [index, collection] of collections.entries()) {
@@ -67,6 +86,7 @@ async function main() {
         sizes: product.sizes,
         features: product.features,
         images: product.images,
+        stockBySize: buildStockBySize(product.sizes),
         sortOrder: index,
       },
       create: {
@@ -89,6 +109,7 @@ async function main() {
         sizes: product.sizes,
         features: product.features,
         images: product.images,
+        stockBySize: buildStockBySize(product.sizes),
         sortOrder: index,
       },
     })

@@ -75,19 +75,28 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <div className="mt-8 flex flex-wrap gap-3">
                 {product.sizes.map((size) => {
                   const active = size === selectedSize
+                  const inStock = product.stockBySize?.[size] !== undefined ? product.stockBySize[size] > 0 : true
 
                   return (
                     <button
                       key={size}
                       type="button"
+                      disabled={!inStock}
                       onClick={() => setSelectedSize(size)}
-                      className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition-colors ${
-                        active
+                      className={`relative overflow-hidden rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] transition-colors ${
+                        !inStock
+                          ? 'border border-black/[0.05] bg-black/[0.02] text-black/30 cursor-not-allowed'
+                          : active
                           ? 'bg-black text-white'
                           : 'border border-black/[0.12] bg-black/[0.03] text-black/[0.72] hover:text-black'
                       }`}
                     >
                       {size}
+                      {!inStock && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="h-px w-full bg-black/20 rotate-[-12deg]" />
+                        </div>
+                      )}
                     </button>
                   )
                 })}
@@ -96,12 +105,13 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
+                  disabled={!selectedSize || (product.stockBySize?.[selectedSize] === 0)}
                   onClick={() =>
                     void addToCart(product.id, selectedSize || product.sizes[0] || '', 1)
                   }
                   className="button-primary"
                 >
-                  Add to cart
+                  {product.stockBySize?.[selectedSize] === 0 ? 'Out of Stock' : 'Add to cart'}
                 </button>
                 <Link to={`/product/${product.slug}`} onClick={onClose} className="button-secondary">
                   Full details

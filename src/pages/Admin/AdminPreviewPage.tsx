@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Reveal from '../../components/ui/Reveal'
 import { ApiError, getAdminDashboard } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { useToast } from '../../hooks/useToast'
 import type { AdminDashboard } from '../../types/api'
 import { formatPrice } from '../../utils/format'
 
@@ -15,6 +16,7 @@ const initialDashboard: AdminDashboard = {
 
 export default function AdminPreviewPage() {
   const { token } = useAuth()
+  const toast = useToast()
   const [dashboard, setDashboard] = useState<AdminDashboard>(initialDashboard)
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export default function AdminPreviewPage() {
       })
       .catch((error) => {
         console.error(error)
-        window.alert(
+        toast.error(
           error instanceof ApiError
             ? error.message
             : 'We could not load the admin dashboard right now.',

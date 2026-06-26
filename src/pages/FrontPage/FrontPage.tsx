@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../lib/api'
 import { useAuth } from '../../hooks/useAuth'
+import { useToast } from '../../hooks/useToast'
+import SEO from '../../components/seo/SEO'
 
 interface FigurineImage {
   src: string
@@ -93,6 +95,7 @@ function getRoleStyle(role: CarouselRole, isMobile: boolean): CSSProperties {
 export default function FrontPage() {
   const navigate = useNavigate()
   const { login, signup } = useAuth()
+  const toast = useToast()
   const [activeIndex, setActiveIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isMobile, setIsMobile] = useState(
@@ -138,7 +141,7 @@ export default function FrontPage() {
     event.preventDefault()
 
     if (authMode === 'signup' && formState.password !== formState.confirmPassword) {
-      window.alert('Passwords do not match.')
+      toast.error('Passwords do not match.')
       return
     }
 
@@ -169,7 +172,7 @@ export default function FrontPage() {
       })
       navigate(authRole === 'admin' ? '/admin' : '/website')
     } catch (error) {
-      window.alert(
+      toast.error(
         error instanceof ApiError ? error.message : 'We could not complete authentication.',
       )
     } finally {
@@ -198,6 +201,7 @@ export default function FrontPage() {
         fontFamily: "'Inter', sans-serif",
       }}
     >
+      <SEO />
       <div className="relative w-full" style={{ height: '100vh', overflow: 'hidden' }}>
         <div
           className="absolute inset-0 pointer-events-none"
