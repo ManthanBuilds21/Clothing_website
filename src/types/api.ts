@@ -139,18 +139,3 @@ export interface OrderDetail {
   address?: Address | null
 }
 
-// Legacy — kept for backwards compat
-export interface AdminOrderPreview {
-  id: string
-  customerName: string
-  customerEmail: string
-  total: number
-  createdAt: string
-  itemCount: number
-  status: string
-  items: Array<{
-    productName: string
-    size: string
-    quantity: number
-  }>
-}

@@ -58,12 +58,16 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   return payload as T
 }
 
+const REMEMBER_KEY = 'manthan.remember'
+
 export function getStoredSession() {
   if (typeof window === 'undefined') {
     return null
   }
 
-  const rawValue = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  const remember = window.localStorage.getItem(REMEMBER_KEY) === 'true'
+  const storage = remember ? window.localStorage : window.sessionStorage
+  const rawValue = storage.getItem(SESSION_STORAGE_KEY)
 
   if (!rawValue) {
     return null
@@ -72,17 +76,23 @@ export function getStoredSession() {
   try {
     return JSON.parse(rawValue) as AuthSession
   } catch {
-    window.localStorage.removeItem(SESSION_STORAGE_KEY)
+    storage.removeItem(SESSION_STORAGE_KEY)
     return null
   }
 }
 
-export function saveStoredSession(session: AuthSession) {
+export function saveStoredSession(session: AuthSession, remember: boolean = false) {
   if (typeof window === 'undefined') {
     return
   }
 
-  window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+  const storage = remember ? window.localStorage : window.sessionStorage
+  storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
+  if (remember) {
+    window.localStorage.setItem(REMEMBER_KEY, 'true')
+  } else {
+    window.localStorage.removeItem(REMEMBER_KEY)
+  }
 }
 
 export function clearStoredSession() {
@@ -91,6 +101,8 @@ export function clearStoredSession() {
   }
 
   window.localStorage.removeItem(SESSION_STORAGE_KEY)
+  window.sessionStorage.removeItem(SESSION_STORAGE_KEY)
+  window.localStorage.removeItem(REMEMBER_KEY)
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────

@@ -541,7 +541,18 @@ export default function AccountPage() {
     }
   }
 
-  if (isLoading) return null
+  if (isLoading) {
+    return (
+      <div className="page-shell pb-16">
+        <div className="section-frame campaign-surface overflow-hidden px-5 py-8 sm:px-8 sm:py-10 bg-[var(--beige)]">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-24 bg-black/10 rounded-full" />
+            <div className="h-16 w-96 bg-black/10 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>

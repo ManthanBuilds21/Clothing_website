@@ -77,7 +77,18 @@ export default function CheckoutPage() {
       .catch(() => toast.error('Could not load saved addresses.'))
   }, [token, toast])
 
-  if (!isReady || storeLoading || catalogLoading) return null
+  if (!isReady || storeLoading || catalogLoading) {
+    return (
+      <div className="page-shell pb-8">
+        <div className="section-frame campaign-surface overflow-hidden px-5 py-8 sm:px-8 sm:py-10 bg-[var(--cloud)]">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-24 bg-black/10 rounded-full" />
+            <div className="h-16 w-96 bg-black/10 rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (cart.length === 0) {
     navigate('/cart')

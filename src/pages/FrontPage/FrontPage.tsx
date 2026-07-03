@@ -110,6 +110,7 @@ export default function FrontPage() {
     password: '',
     confirmPassword: '',
     token: '',
+    remember: false,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -154,6 +155,7 @@ export default function FrontPage() {
           email: formState.email,
           password: formState.password,
           role: authRole,
+          remember: formState.remember,
         })
         setAuthOpen(false)
         setFormState({
@@ -162,6 +164,7 @@ export default function FrontPage() {
           password: '',
           confirmPassword: '',
           token: '',
+          remember: false,
         })
         navigate(authRole === 'admin' ? '/admin' : '/website')
       } else if (authMode === 'signup') {
@@ -170,6 +173,7 @@ export default function FrontPage() {
           email: formState.email,
           password: formState.password,
           role: authRole,
+          remember: formState.remember,
         })
         setAuthOpen(false)
         setFormState({
@@ -178,6 +182,7 @@ export default function FrontPage() {
           password: '',
           confirmPassword: '',
           token: '',
+          remember: false,
         })
         navigate(authRole === 'admin' ? '/admin' : '/website')
       } else if (authMode === 'forgot') {
@@ -193,6 +198,7 @@ export default function FrontPage() {
           password: '',
           confirmPassword: '',
           token: '',
+          remember: false,
         }))
       }
     } catch (error) {
@@ -440,13 +446,26 @@ export default function FrontPage() {
                   ) : null}
 
                   {authMode === 'login' && (
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('forgot')}
-                      className="text-left text-xs text-white/70 hover:text-white hover:underline transition-colors mt-0.5 ml-1 self-start"
-                    >
-                      Forgot password?
-                    </button>
+                    <>
+                      <label className="flex items-center gap-2 cursor-pointer mt-0.5 ml-1 self-start">
+                        <input
+                          type="checkbox"
+                          checked={formState.remember}
+                          onChange={(event) =>
+                            setFormState((current) => ({ ...current, remember: event.target.checked }))
+                          }
+                          className="h-4 w-4 rounded border-white/30 bg-white/10 text-black focus:ring-0"
+                        />
+                        <span className="text-xs text-white/70">Remember me</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('forgot')}
+                        className="text-left text-xs text-white/70 hover:text-white hover:underline transition-colors ml-1 self-start"
+                      >
+                        Forgot password?
+                      </button>
+                    </>
                   )}
 
                   {(authMode === 'forgot' || authMode === 'reset') && (
