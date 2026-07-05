@@ -1,23 +1,25 @@
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler, ApiError } from '../lib/http.js'
 import { authenticate } from '../middleware/auth.js'
+import { rateLimit } from '../middleware/security.js'
 import { signAuthToken, toClientRole } from '../lib/auth.js'
 
 const router = Router()
 
 const signupSchema = z.object({
-  name: z.string().trim().min(2),
-  email: z.string().trim().email(),
-  password: z.string().min(8),
-  role: z.enum(['user', 'admin']),
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().email().max(255),
+  password: z.string().min(8).max(128),
+  role: z.literal('user'),
 })
 
 const loginSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(8),
+  email: z.string().trim().email().max(255),
+  password: z.string().min(8).max(128),
   role: z.enum(['user', 'admin']),
 })
 
@@ -49,7 +51,7 @@ router.post(
         name: payload.name,
         email: payload.email.toLowerCase(),
         passwordHash: await bcrypt.hash(payload.password, 12),
-        role: payload.role === 'admin' ? 'ADMIN' : 'USER',
+        role: 'USER',
       },
     })
 
@@ -114,14 +116,16 @@ router.get(
 // In-memory store for password reset tokens: email.toLowerCase() -> { token, expiresAt }
 const resetTokens = new Map<string, { token: string; expiresAt: number }>()
 
+import crypto from 'crypto'
+
 const forgotPasswordSchema = z.object({
-  email: z.string().trim().email(),
+  email: z.string().trim().email().max(255),
 })
 
 const resetPasswordSchema = z.object({
-  email: z.string().trim().email(),
-  token: z.string().trim(),
-  password: z.string().min(8),
+  email: z.string().trim().email().max(255),
+  token: z.string().trim().min(1).max(256),
+  password: z.string().min(8).max(128),
 })
 
 router.post(
@@ -135,8 +139,8 @@ router.post(
     })
 
     if (user) {
-      // Generate a 6-digit verification code
-      const token = Math.floor(100000 + Math.random() * 900000).toString()
+      // Generate a cryptographically random reset token
+      const token = crypto.randomBytes(32).toString('hex')
       resetTokens.set(normalizedEmail, {
         token,
         expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes

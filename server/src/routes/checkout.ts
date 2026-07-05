@@ -17,13 +17,13 @@ const razorpay = new Razorpay({
 
 const addressSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1),
-  street: z.string().min(1),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  postalCode: z.string().min(1),
+  name: z.string().min(1).max(200),
+  street: z.string().min(1).max(500),
+  city: z.string().min(1).max(200),
+  state: z.string().min(1).max(200),
+  postalCode: z.string().min(1).max(20),
   country: z.string().default('India'),
-  phone: z.string().min(1),
+  phone: z.string().min(1).max(20),
 })
 
 // ─── Webhook (no auth middleware — server-to-server) ──────────────────────────
@@ -135,7 +135,7 @@ export async function webhookHandler(request: Request, response: Response) {
         }
       })
     } catch (error) {
-      console.error('Webhook processing error:', error)
+      console.error('[WEBHOOK] Processing error:', error)
       // Don't expose internal errors to Razorpay — respond 200 to avoid retries
       // Log and handle via monitoring
     }
@@ -213,7 +213,7 @@ router.post(
         receipt: `rcpt_${userId}_${Date.now()}`.slice(0, 40),
       })
     } catch (error) {
-      console.error('Razorpay Error:', error)
+      console.error('[CHECKOUT] Razorpay order creation failed:', error)
       throw new ApiError(500, 'Failed to initialize payment gateway.')
     }
 
@@ -307,7 +307,7 @@ router.post(
     try {
       razorpayFetchedOrder = await razorpay.orders.fetch(razorpay_order_id) as { amount: number }
     } catch (error) {
-      console.error('Razorpay fetch error:', error)
+      console.error('[CHECKOUT] Razorpay order fetch failed:', error)
       throw new ApiError(500, 'Could not verify payment amount with gateway.')
     }
 
