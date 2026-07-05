@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import { PrismaClient } from '@prisma/client'
-import { collections, products } from '../../src/data/catalog.ts'
+import { collections, products } from './seed-data.ts'
 
 const prisma = new PrismaClient()
 

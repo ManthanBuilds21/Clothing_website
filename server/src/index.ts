@@ -4,6 +4,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library'
 import { ZodError } from 'zod'
 import { config } from './config.js'
 import { ApiError } from './lib/http.js'
+import { rateLimit, securityHeaders } from './middleware/security.js'
 import authRouter from './routes/auth.js'
 import catalogRouter from './routes/catalog.js'
 import newsletterRouter from './routes/newsletter.js'
@@ -14,11 +15,16 @@ import accountRouter from './routes/account.js'
 
 const app = express()
 
+app.use(securityHeaders)
 app.use(
   cors({
     origin: config.clientOrigin,
   }),
 )
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 })
+const newsletterLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 })
+const resetPasswordLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3 })
 
 // ── Webhook must be registered BEFORE express.json() so it receives raw Buffer
 app.post('/api/checkout/webhook', express.raw({ type: 'application/json' }), webhookHandler)
@@ -29,9 +35,9 @@ app.get('/api/health', (_request, response) => {
   response.json({ status: 'ok' })
 })
 
-app.use('/api/auth', authRouter)
+app.use('/api/auth', authLimiter, authRouter)
 app.use('/api/catalog', catalogRouter)
-app.use('/api/newsletter', newsletterRouter)
+app.use('/api/newsletter', newsletterLimiter, newsletterRouter)
 app.use('/api/store', storeRouter)
 app.use('/api/admin', adminRouter)
 app.use('/api/checkout', checkoutRouter)
@@ -66,7 +72,7 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
     return
   }
 
-  console.error(error)
+  console.error('[ERROR]', error instanceof Error ? error.message : error)
 
   response.status(500).json({
     message: 'Internal server error.',

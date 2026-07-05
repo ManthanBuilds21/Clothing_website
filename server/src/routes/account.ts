@@ -67,13 +67,13 @@ router.get(
 // ── POST /api/account/addresses ───────────────────────────────────────────────
 
 const addressSchema = z.object({
-  name: z.string().min(1),
-  street: z.string().min(1),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  postalCode: z.string().min(1),
+  name: z.string().min(1).max(200),
+  street: z.string().min(1).max(500),
+  city: z.string().min(1).max(200),
+  state: z.string().min(1).max(200),
+  postalCode: z.string().min(1).max(20),
   country: z.string().default('India'),
-  phone: z.string().min(1),
+  phone: z.string().min(1).max(20),
 })
 
 router.post(
@@ -100,13 +100,13 @@ router.post(
 // ── PATCH /api/account/addresses/:id ─────────────────────────────────────────
 
 const updateAddressSchema = z.object({
-  name: z.string().min(1),
-  street: z.string().min(1),
-  city: z.string().min(1),
-  state: z.string().min(1),
-  postalCode: z.string().min(1),
+  name: z.string().min(1).max(200),
+  street: z.string().min(1).max(500),
+  city: z.string().min(1).max(200),
+  state: z.string().min(1).max(200),
+  postalCode: z.string().min(1).max(20),
   country: z.string().default('India'),
-  phone: z.string().min(1),
+  phone: z.string().min(1).max(20),
 })
 
 router.patch(

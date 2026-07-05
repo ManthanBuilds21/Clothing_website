@@ -142,6 +142,7 @@ model Order {
   updatedAt       DateTime      @updatedAt
 
   @@index([userId])
+  @@index([razorpayOrderId])
   @@map("orders")
 }
 
