@@ -27,12 +27,14 @@ interface AuthContextValue {
     email: string
     password: string
     role: 'user' | 'admin'
+    remember?: boolean
   }) => Promise<AuthSession>
   signup: (payload: {
     name: string
     email: string
     password: string
     role: 'user' | 'admin'
+    remember?: boolean
   }) => Promise<AuthSession>
   logout: () => void
 }
@@ -72,14 +74,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback<AuthContextValue['login']>(async (payload) => {
     const nextSession = await loginRequest(payload)
-    saveStoredSession(nextSession)
+    saveStoredSession(nextSession, payload.remember ?? false)
     setSession(nextSession)
     return nextSession
   }, [])
 
   const signup = useCallback<AuthContextValue['signup']>(async (payload) => {
     const nextSession = await signupRequest(payload)
-    saveStoredSession(nextSession)
+    saveStoredSession(nextSession, payload.remember ?? false)
     setSession(nextSession)
     return nextSession
   }, [])

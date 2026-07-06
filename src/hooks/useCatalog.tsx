@@ -32,8 +32,8 @@ export function CatalogProvider({ children }: PropsWithChildren) {
 
     try {
       setCatalog(await getCatalog())
-    } catch (error) {
-      console.error(error)
+    } catch {
+      // Catalog load failure is non-fatal; component handles empty state
     } finally {
       setIsLoading(false)
     }
