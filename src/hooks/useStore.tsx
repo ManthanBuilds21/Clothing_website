@@ -137,7 +137,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
     void doLoad()
       .catch((error) => {
-        console.error(error)
         if (error instanceof ApiError && error.status === 401) logout()
         setStore(emptyStore)
       })
@@ -192,7 +191,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
   // ─── Server mutation helper ──────────────────────────────────────────────
 
   const handleMutationError = useCallback((error: unknown, fallbackMessage: string) => {
-    console.error(error)
     if (error instanceof ApiError && error.status === 401) {
       logout()
       toast.error('Your session expired. Please log in again.')

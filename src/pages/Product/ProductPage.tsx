@@ -52,7 +52,18 @@ export default function ProductPage() {
   }, [product])
 
   if (!product) {
-    return null
+    return (
+      <div className="page-shell pb-8">
+        <div className="section-frame grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="campaign-surface min-h-[540px] bg-[var(--cloud)] animate-pulse" />
+          <div className="space-y-4 p-8">
+            <div className="h-4 w-32 bg-black/10 rounded-full" />
+            <div className="h-16 w-96 bg-black/10 rounded-2xl" />
+            <div className="h-4 w-64 bg-black/10 rounded-full" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const relatedProducts = products
