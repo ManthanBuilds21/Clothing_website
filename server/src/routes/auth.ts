@@ -4,8 +4,10 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler, ApiError } from '../lib/http.js'
+import { sendPasswordResetEmail } from '../lib/mailer.js'
+import { config } from '../config.js'
 import { authenticate } from '../middleware/auth.js'
-import { rateLimit } from '../middleware/security.js'
+import { resetPasswordLimiter } from '../middleware/security.js'
 import { signAuthToken, toClientRole } from '../lib/auth.js'
 
 const router = Router()
@@ -113,11 +115,6 @@ router.get(
   }),
 )
 
-// In-memory store for password reset tokens: email.toLowerCase() -> { token, expiresAt }
-const resetTokens = new Map<string, { token: string; expiresAt: number }>()
-
-import crypto from 'crypto'
-
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email().max(255),
 })
@@ -130,6 +127,7 @@ const resetPasswordSchema = z.object({
 
 router.post(
   '/forgot-password',
+  resetPasswordLimiter,
   asyncHandler(async (request, response) => {
     const { email } = forgotPasswordSchema.parse(request.body)
     const normalizedEmail = email.toLowerCase()
@@ -139,17 +137,20 @@ router.post(
     })
 
     if (user) {
-      // Generate a cryptographically random reset token
       const token = crypto.randomBytes(32).toString('hex')
-      resetTokens.set(normalizedEmail, {
-        token,
-        expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+      await prisma.passwordResetToken.upsert({
+        where: { email: normalizedEmail },
+        update: { token, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
+        create: { email: normalizedEmail, token, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
       })
 
-      // Simulate sending email by logging to the backend console
-      console.log('\n==================================================')
-      console.log(`[PASSWORD RESET] Token for ${email}: ${token}`)
-      console.log('==================================================\n')
+      const resetLink = `${config.clientOrigin}/reset-password?email=${encodeURIComponent(normalizedEmail)}&token=${token}`
+
+      try {
+        await sendPasswordResetEmail({ to: normalizedEmail, resetLink })
+      } catch (error) {
+        console.error('[PASSWORD RESET] Failed to send email:', error)
+      }
     }
 
     response.json({
@@ -161,13 +162,16 @@ router.post(
 
 router.post(
   '/reset-password',
+  resetPasswordLimiter,
   asyncHandler(async (request, response) => {
     const { email, token, password } = resetPasswordSchema.parse(request.body)
     const normalizedEmail = email.toLowerCase()
 
-    const stored = resetTokens.get(normalizedEmail)
+    const stored = await prisma.passwordResetToken.findUnique({
+      where: { email: normalizedEmail },
+    })
 
-    if (!stored || stored.token !== token || Date.now() > stored.expiresAt) {
+    if (!stored || stored.token !== token || Date.now() > stored.expiresAt.getTime()) {
       throw new ApiError(400, 'Invalid or expired reset token.')
     }
 
@@ -179,7 +183,6 @@ router.post(
       throw new ApiError(404, 'User not found.')
     }
 
-    // Update password
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -187,8 +190,9 @@ router.post(
       },
     })
 
-    // Clean up token
-    resetTokens.delete(normalizedEmail)
+    await prisma.passwordResetToken.delete({
+      where: { email: normalizedEmail },
+    })
 
     response.json({
       success: true,

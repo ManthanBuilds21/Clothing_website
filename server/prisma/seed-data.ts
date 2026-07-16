@@ -149,7 +149,7 @@ export const products = [
     description:
       'The Signal Cap completes the silhouette with understated branding, a comfortable crown, and a washed finish that feels broken in from day one.',
     story:
-      'Accessories in the MANTHAN universe are designed to punctuate a look, not overpower it. This one brings exactly the right note.',
+      'Accessories in the Veloura universe are designed to punctuate a look, not overpower it. This one brings exactly the right note.',
     fit: 'Classic six-panel fit with adjustable back strap.',
     material: 'Washed cotton twill with tonal embroidery.',
     colors: ['Rose Dust', 'Slate', 'Off White'],

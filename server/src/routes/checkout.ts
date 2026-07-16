@@ -45,7 +45,8 @@ export async function webhookHandler(request: Request, response: Response) {
     .update(rawBody)
     .digest('hex')
 
-  if (expectedSig !== signature) {
+  const sigBuffers = [Buffer.from(expectedSig), Buffer.from(signature)]
+  if (sigBuffers[0].length !== sigBuffers[1].length || !crypto.timingSafeEqual(sigBuffers[0], sigBuffers[1])) {
     response.status(400).json({ message: 'Invalid webhook signature.' })
     return
   }
@@ -274,7 +275,8 @@ router.post(
       .update(body.toString())
       .digest('hex')
 
-    const isAuthentic = expectedSignature === razorpay_signature
+    const sigBuffers = [Buffer.from(expectedSignature), Buffer.from(razorpay_signature)]
+    const isAuthentic = sigBuffers[0].length === sigBuffers[1].length && crypto.timingSafeEqual(sigBuffers[0], sigBuffers[1])
 
     if (!isAuthentic) {
       throw new ApiError(400, 'Invalid payment signature.')

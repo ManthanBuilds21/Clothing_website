@@ -37,6 +37,8 @@ interface RateLimitOptions {
  * a single-instance deployment to blunt credential-stuffing / brute force on the
  * auth endpoints. For multi-instance deployments, back this with a shared store.
  */
+export const resetPasswordLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3 })
+
 export function rateLimit({ windowMs, max, message }: RateLimitOptions) {
   const hits = new Map<string, { count: number; resetAt: number }>()
 

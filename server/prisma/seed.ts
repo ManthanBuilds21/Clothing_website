@@ -1,11 +1,18 @@
 import bcrypt from 'bcrypt'
+import dotenv from 'dotenv'
 import { PrismaClient } from '@prisma/client'
 import { collections, products } from './seed-data.ts'
 
+dotenv.config()
+
 const prisma = new PrismaClient()
 
-const ADMIN_EMAIL = 'admin@manthan.test'
-const ADMIN_PASSWORD = 'admin12345'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+  throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment for seeding.')
+}
 
 function buildStockBySize(sizes: string[]) {
   return Object.fromEntries(sizes.map((size) => [size, 25]))
@@ -16,7 +23,7 @@ async function main() {
     where: { email: ADMIN_EMAIL },
     update: { role: 'ADMIN' },
     create: {
-      name: 'Manthan Admin',
+      name: 'Veloura Admin',
       email: ADMIN_EMAIL,
       passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 12),
       role: 'ADMIN',

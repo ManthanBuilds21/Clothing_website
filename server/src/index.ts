@@ -24,7 +24,6 @@ app.use(
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 })
 const newsletterLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 })
-const resetPasswordLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3 })
 
 // ── Webhook must be registered BEFORE express.json() so it receives raw Buffer
 app.post('/api/checkout/webhook', express.raw({ type: 'application/json' }), webhookHandler)
@@ -80,5 +79,5 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
 })
 
 app.listen(config.port, () => {
-  console.log(`MANTHAN API listening on http://localhost:${config.port}`)
+  console.log(`Veloura API listening on http://localhost:${config.port}`)
 })
