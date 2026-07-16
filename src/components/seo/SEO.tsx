@@ -8,10 +8,10 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'MANTHAN | Editorial Fashion',
-  description = 'MANTHAN is a curated collection of oversized silhouettes and premium fabrics.',
-  image = 'https://manthan-hero.vercel.app/og-image.jpg',
-  url = 'https://manthan-hero.vercel.app',
+  title = 'Veloura | Editorial Fashion',
+  description = 'Veloura is a curated collection of oversized silhouettes and premium fabrics.',
+  image = 'https://veloura.vercel.app/og-image.jpg',
+  url = 'https://veloura.vercel.app',
 }: SEOProps) {
   return (
     <Helmet>

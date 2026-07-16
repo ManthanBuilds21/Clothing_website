@@ -28,7 +28,7 @@ export default function Navbar() {
         <div className="section-frame">
           <div className="flex items-center justify-between rounded-full border border-black/10 bg-white/[0.72] px-4 py-3 shadow-[0_10px_32px_rgba(17,17,17,0.08)] backdrop-blur-xl sm:px-6">
             <Link to="/website" className="font-display text-[1.65rem] leading-none text-black">
-              MANTHAN
+              Veloura
             </Link>
 
             <nav className="hidden items-center gap-8 lg:flex">
@@ -105,7 +105,7 @@ export default function Navbar() {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-display text-[1.5rem]">MANTHAN</span>
+                <span className="font-display text-[1.5rem]">Veloura</span>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}

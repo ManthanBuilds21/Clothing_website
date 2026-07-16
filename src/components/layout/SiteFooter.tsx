@@ -8,7 +8,7 @@ export default function SiteFooter() {
       <div className="section-frame campaign-surface bg-black px-6 py-10 text-white sm:px-10 sm:py-12">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="eyebrow text-white/[0.48]">MANTHAN Clothing</p>
+            <p className="eyebrow text-white/[0.48]">Veloura</p>
             <h2 className="mt-4 text-[3rem] leading-[0.9] sm:text-[4.5rem] lg:text-[6.2rem]">
               Wear the future with a sharper edge.
             </h2>
