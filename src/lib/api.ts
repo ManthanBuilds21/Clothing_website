@@ -15,7 +15,7 @@ import type {
 import type { Product } from '../types/catalog'
 
 const API_BASE_URL = '/api'
-const SESSION_STORAGE_KEY = 'manthan.session'
+const SESSION_STORAGE_KEY = 'veloura.session'
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
@@ -58,7 +58,7 @@ async function request<T>(path: string, options: RequestOptions = {}) {
   return payload as T
 }
 
-const REMEMBER_KEY = 'manthan.remember'
+const REMEMBER_KEY = 'veloura.remember'
 
 export function getStoredSession() {
   if (typeof window === 'undefined') {
