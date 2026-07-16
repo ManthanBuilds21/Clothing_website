@@ -18,6 +18,7 @@ app.use(cors({
     origin: config.clientOrigin,
 }));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const newsletterLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
 // ── Webhook must be registered BEFORE express.json() so it receives raw Buffer
 app.post('/api/checkout/webhook', express.raw({ type: 'application/json' }), webhookHandler);
 app.use(express.json());
@@ -26,7 +27,7 @@ app.get('/api/health', (_request, response) => {
 });
 app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/catalog', catalogRouter);
-app.use('/api/newsletter', newsletterRouter);
+app.use('/api/newsletter', newsletterLimiter, newsletterRouter);
 app.use('/api/store', storeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/checkout', checkoutRouter);
