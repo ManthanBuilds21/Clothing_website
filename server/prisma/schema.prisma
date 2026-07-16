@@ -172,6 +172,15 @@ model NewsletterSubscriber {
   @@map("newsletter_subscribers")
 }
 
+model PasswordResetToken {
+  email     String   @id
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
 model Address {
   id         String   @id @default(cuid())
   userId     String

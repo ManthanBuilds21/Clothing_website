@@ -1,20 +1,24 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler, ApiError } from '../lib/http.js';
+import { sendPasswordResetEmail } from '../lib/mailer.js';
+import { config } from '../config.js';
 import { authenticate } from '../middleware/auth.js';
+import { resetPasswordLimiter } from '../middleware/security.js';
 import { signAuthToken, toClientRole } from '../lib/auth.js';
 const router = Router();
 const signupSchema = z.object({
-    name: z.string().trim().min(2),
-    email: z.string().trim().email(),
-    password: z.string().min(8),
-    role: z.enum(['user', 'admin']),
+    name: z.string().trim().min(2).max(100),
+    email: z.string().trim().email().max(255),
+    password: z.string().min(8).max(128),
+    role: z.literal('user'),
 });
 const loginSchema = z.object({
-    email: z.string().trim().email(),
-    password: z.string().min(8),
+    email: z.string().trim().email().max(255),
+    password: z.string().min(8).max(128),
     role: z.enum(['user', 'admin']),
 });
 function serializeUser(user) {
@@ -40,7 +44,7 @@ router.post('/signup', asyncHandler(async (request, response) => {
             name: payload.name,
             email: payload.email.toLowerCase(),
             passwordHash: await bcrypt.hash(payload.password, 12),
-            role: payload.role === 'admin' ? 'ADMIN' : 'USER',
+            role: 'USER',
         },
     });
     response.status(201).json({
@@ -83,44 +87,47 @@ router.get('/me', authenticate, asyncHandler(async (request, response) => {
         user: serializeUser(user),
     });
 }));
-// In-memory store for password reset tokens: email.toLowerCase() -> { token, expiresAt }
-const resetTokens = new Map();
 const forgotPasswordSchema = z.object({
-    email: z.string().trim().email(),
+    email: z.string().trim().email().max(255),
 });
 const resetPasswordSchema = z.object({
-    email: z.string().trim().email(),
-    token: z.string().trim(),
-    password: z.string().min(8),
+    email: z.string().trim().email().max(255),
+    token: z.string().trim().min(1).max(256),
+    password: z.string().min(8).max(128),
 });
-router.post('/forgot-password', asyncHandler(async (request, response) => {
+router.post('/forgot-password', resetPasswordLimiter, asyncHandler(async (request, response) => {
     const { email } = forgotPasswordSchema.parse(request.body);
     const normalizedEmail = email.toLowerCase();
     const user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
     });
     if (user) {
-        // Generate a 6-digit verification code
-        const token = Math.floor(100000 + Math.random() * 900000).toString();
-        resetTokens.set(normalizedEmail, {
-            token,
-            expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+        const token = crypto.randomBytes(32).toString('hex');
+        await prisma.passwordResetToken.upsert({
+            where: { email: normalizedEmail },
+            update: { token, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
+            create: { email: normalizedEmail, token, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
         });
-        // Simulate sending email by logging to the backend console
-        console.log('\n==================================================');
-        console.log(`[PASSWORD RESET] Token for ${email}: ${token}`);
-        console.log('==================================================\n');
+        const resetLink = `${config.clientOrigin}/reset-password?email=${encodeURIComponent(normalizedEmail)}&token=${token}`;
+        try {
+            await sendPasswordResetEmail({ to: normalizedEmail, resetLink });
+        }
+        catch (error) {
+            console.error('[PASSWORD RESET] Failed to send email:', error);
+        }
     }
     response.json({
         success: true,
         message: 'If that email exists in our system, we have sent a reset code.',
     });
 }));
-router.post('/reset-password', asyncHandler(async (request, response) => {
+router.post('/reset-password', resetPasswordLimiter, asyncHandler(async (request, response) => {
     const { email, token, password } = resetPasswordSchema.parse(request.body);
     const normalizedEmail = email.toLowerCase();
-    const stored = resetTokens.get(normalizedEmail);
-    if (!stored || stored.token !== token || Date.now() > stored.expiresAt) {
+    const stored = await prisma.passwordResetToken.findUnique({
+        where: { email: normalizedEmail },
+    });
+    if (!stored || stored.token !== token || Date.now() > stored.expiresAt.getTime()) {
         throw new ApiError(400, 'Invalid or expired reset token.');
     }
     const user = await prisma.user.findUnique({
@@ -129,15 +136,15 @@ router.post('/reset-password', asyncHandler(async (request, response) => {
     if (!user) {
         throw new ApiError(404, 'User not found.');
     }
-    // Update password
     await prisma.user.update({
         where: { id: user.id },
         data: {
             passwordHash: await bcrypt.hash(password, 12),
         },
     });
-    // Clean up token
-    resetTokens.delete(normalizedEmail);
+    await prisma.passwordResetToken.delete({
+        where: { email: normalizedEmail },
+    });
     response.json({
         success: true,
         message: 'Password has been reset successfully.',
