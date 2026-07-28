@@ -33,9 +33,13 @@ interface RateLimitOptions {
 }
 
 /**
- * Minimal fixed-window in-memory rate limiter keyed by client IP. Sufficient for
- * a single-instance deployment to blunt credential-stuffing / brute force on the
- * auth endpoints. For multi-instance deployments, back this with a shared store.
+ * Minimal fixed-window in-memory rate limiter keyed by client IP.
+ *
+ * ⚠️  Single-instance assumption — this Map lives in process memory and is
+ * NOT shared across replicas. If you deploy more than one instance behind a
+ * load balancer, replace this with a Redis-backed limiter (e.g. express-rate-limit
+ * with the Redis store, or a custom ioredis-based implementation) to get
+ * accurate cross-instance counting.
  */
 export const resetPasswordLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3 })
 
