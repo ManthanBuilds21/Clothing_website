@@ -1,3 +1,8 @@
+function placeholder(color: string, text: string, index: number) {
+  const bg = color.replace('#', '')
+  return `https://placehold.co/1200x1600/${bg}/333?text=${encodeURIComponent(text)}+${index + 1}`
+}
+
 export const products = [
   {
     id: 'gridline-hoodie',
@@ -20,11 +25,7 @@ export const products = [
     colors: ['Bone', 'Heat Orange', 'Washed Black'],
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     features: ['Double-layer hood', 'Hidden phone sleeve', 'Ribbed cuffs', 'Garment washed finish'],
-    images: [
-      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1503342394128-c104d54dba01?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Gridline'].map((_, i) => placeholder('#F6B39D', 'Gridline', i)),
   },
   {
     id: 'noctis-parka',
@@ -47,11 +48,7 @@ export const products = [
     colors: ['Sky', 'Stone', 'Midnight'],
     sizes: ['S', 'M', 'L', 'XL'],
     features: ['Storm placket', 'Two-way zip', 'Ventilated back yoke', 'Hidden drawcord'],
-    images: [
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Noctis'].map((_, i) => placeholder('#A2CCFF', 'Noctis', i)),
   },
   {
     id: 'district-tee',
@@ -74,11 +71,7 @@ export const products = [
     colors: ['Soft White', 'Moss', 'Ink'],
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     features: ['High-rib collar', 'Pre-shrunk finish', 'Side seam structure', 'Soft hand feel'],
-    images: [
-      'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['District'].map((_, i) => placeholder('#9FDBAA', 'District', i)),
   },
   {
     id: 'axis-cargo',
@@ -101,11 +94,7 @@ export const products = [
     colors: ['Sand', 'Olive Drab', 'Black'],
     sizes: ['28', '30', '32', '34', '36'],
     features: ['Inset cargo pockets', 'Articulated knee', 'Adjustable hem toggle', 'Reinforced seat panel'],
-    images: [
-      'https://images.unsplash.com/photo-1506629905607-d9d7d3b81676?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Axis'].map((_, i) => placeholder('#F8EEE1', 'Axis', i)),
   },
   {
     id: 'vertex-runner',
@@ -128,11 +117,7 @@ export const products = [
     colors: ['Glacier', 'Steel', 'Bone'],
     sizes: ['40', '41', '42', '43', '44', '45'],
     features: ['Layered upper', 'Reflective lace loop', 'Molded heel clip', 'High rebound sole'],
-    images: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1543508282-6319a3e2621f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Vertex'].map((_, i) => placeholder('#C5E0FF', 'Vertex', i)),
   },
   {
     id: 'signal-cap',
@@ -155,11 +140,7 @@ export const products = [
     colors: ['Rose Dust', 'Slate', 'Off White'],
     sizes: ['One Size'],
     features: ['Curved brim', 'Metal slider', 'Tonal stitch detailing', 'Soft crown'],
-    images: [
-      'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Signal'].map((_, i) => placeholder('#F0B7D3', 'Signal', i)),
   },
   {
     id: 'static-fleece',
@@ -182,11 +163,7 @@ export const products = [
     colors: ['Mineral', 'Ash', 'Ink'],
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     features: ['Washed surface', 'Double-needle seams', 'Wide rib hem', 'Soft brushed interior'],
-    images: [
-      'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Static'].map((_, i) => placeholder('#F5F5F5', 'Static', i)),
   },
   {
     id: 'frame-bomber',
@@ -209,11 +186,7 @@ export const products = [
     colors: ['Black', 'Petrol', 'Sand'],
     sizes: ['S', 'M', 'L', 'XL'],
     features: ['Metal zipper', 'Padded sleeve', 'Interior pocket', 'Rib stand collar'],
-    images: [
-      'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=1200&q=80',
-    ],
+    images: ['Frame'].map((_, i) => placeholder('#2D2D2D', 'Frame', i)),
   },
 ]
 
@@ -229,8 +202,7 @@ export const collections = [
     category: 'Hoodies',
     background: '#F4845F',
     accent: '#F7B49C',
-    heroImage:
-      'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1400&q=80',
+    heroImage: placeholder('#F4845F', 'Signal+Noise', 0),
     productSlugs: ['gridline-heavy-hoodie', 'district-cut-tee', 'signal-6-panel-cap'],
   },
   {
@@ -244,8 +216,7 @@ export const collections = [
     category: 'Jackets',
     background: '#6EB5FF',
     accent: '#A3D1FF',
-    heroImage:
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1400&q=80',
+    heroImage: placeholder('#6EB5FF', 'After+Hours', 0),
     productSlugs: ['noctis-shell-parka', 'axis-cargo-pant', 'frame-bomber-jacket'],
   },
   {
@@ -259,8 +230,7 @@ export const collections = [
     category: 'Sneakers',
     background: '#6BBF7A',
     accent: '#9FDBAA',
-    heroImage:
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1400&q=80',
+    heroImage: placeholder('#6BBF7A', 'Future+Motion', 0),
     productSlugs: ['vertex-runner-sneaker', 'static-fleece-hoodie'],
   },
   {
@@ -274,8 +244,7 @@ export const collections = [
     category: 'Accessories',
     background: '#E882B4',
     accent: '#F1B5D2',
-    heroImage:
-      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80',
+    heroImage: placeholder('#E882B4', 'Rose+Frequency', 0),
     productSlugs: ['signal-6-panel-cap', 'gridline-heavy-hoodie'],
   },
 ]

@@ -8,7 +8,7 @@ import { sendPasswordResetEmail } from '../lib/mailer.js'
 import { config } from '../config.js'
 import { authenticate } from '../middleware/auth.js'
 import { resetPasswordLimiter } from '../middleware/security.js'
-import { signAuthToken, toClientRole } from '../lib/auth.js'
+import { signAuthToken, toClientRole, setAuthCookie, clearAuthCookie } from '../lib/auth.js'
 
 const router = Router()
 
@@ -39,9 +39,7 @@ router.post(
   asyncHandler(async (request, response) => {
     const payload = signupSchema.parse(request.body)
     const existingUser = await prisma.user.findUnique({
-      where: {
-        email: payload.email.toLowerCase(),
-      },
+      where: { email: payload.email.toLowerCase() },
     })
 
     if (existingUser) {
@@ -57,8 +55,11 @@ router.post(
       },
     })
 
+    const token = signAuthToken(user)
+    setAuthCookie(response, token)
+
     response.status(201).json({
-      token: signAuthToken(user),
+      token,
       user: serializeUser(user),
     })
   }),
@@ -69,9 +70,7 @@ router.post(
   asyncHandler(async (request, response) => {
     const payload = loginSchema.parse(request.body)
     const user = await prisma.user.findUnique({
-      where: {
-        email: payload.email.toLowerCase(),
-      },
+      where: { email: payload.email.toLowerCase() },
     })
 
     if (!user) {
@@ -88,10 +87,21 @@ router.post(
       throw new ApiError(403, 'That account does not match the selected role.')
     }
 
+    const token = signAuthToken(user)
+    setAuthCookie(response, token)
+
     response.json({
-      token: signAuthToken(user),
+      token,
       user: serializeUser(user),
     })
+  }),
+)
+
+router.post(
+  '/logout',
+  asyncHandler(async (_request, response) => {
+    clearAuthCookie(response)
+    response.json({ success: true })
   }),
 )
 
@@ -100,9 +110,7 @@ router.get(
   authenticate,
   asyncHandler(async (request, response) => {
     const user = await prisma.user.findUnique({
-      where: {
-        id: request.auth?.userId,
-      },
+      where: { id: request.auth?.userId },
     })
 
     if (!user) {
@@ -171,7 +179,17 @@ router.post(
       where: { email: normalizedEmail },
     })
 
-    if (!stored || stored.token !== token || Date.now() > stored.expiresAt.getTime()) {
+    if (!stored || Date.now() > stored.expiresAt.getTime()) {
+      throw new ApiError(400, 'Invalid or expired reset token.')
+    }
+
+    // Constant-time comparison to prevent timing side-channel attacks
+    const tokenBuffer = Buffer.from(token)
+    const storedBuffer = Buffer.from(stored.token)
+    if (
+      tokenBuffer.length !== storedBuffer.length ||
+      !crypto.timingSafeEqual(tokenBuffer, storedBuffer)
+    ) {
       throw new ApiError(400, 'Invalid or expired reset token.')
     }
 

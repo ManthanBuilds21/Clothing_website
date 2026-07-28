@@ -1,15 +1,22 @@
 import { verifyAuthToken } from '../lib/auth.js';
 import { ApiError } from '../lib/http.js';
+const COOKIE_NAME = 'veloura.session';
 function getBearerToken(request) {
     const authorization = request.header('authorization');
     if (!authorization?.startsWith('Bearer ')) {
-        throw new ApiError(401, 'Authentication required.');
+        return null;
     }
     return authorization.slice('Bearer '.length).trim();
 }
+function getCookieToken(request) {
+    return request.cookies?.[COOKIE_NAME] ?? null;
+}
 export function authenticate(request, _response, next) {
     try {
-        const token = getBearerToken(request);
+        const token = getCookieToken(request) ?? getBearerToken(request);
+        if (!token) {
+            throw new ApiError(401, 'Authentication required.');
+        }
         request.auth = verifyAuthToken(token);
         next();
     }
