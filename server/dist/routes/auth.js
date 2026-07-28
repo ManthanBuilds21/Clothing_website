@@ -8,7 +8,7 @@ import { sendPasswordResetEmail } from '../lib/mailer.js';
 import { config } from '../config.js';
 import { authenticate } from '../middleware/auth.js';
 import { resetPasswordLimiter } from '../middleware/security.js';
-import { signAuthToken, toClientRole } from '../lib/auth.js';
+import { signAuthToken, toClientRole, setAuthCookie, clearAuthCookie } from '../lib/auth.js';
 const router = Router();
 const signupSchema = z.object({
     name: z.string().trim().min(2).max(100),
@@ -32,9 +32,7 @@ function serializeUser(user) {
 router.post('/signup', asyncHandler(async (request, response) => {
     const payload = signupSchema.parse(request.body);
     const existingUser = await prisma.user.findUnique({
-        where: {
-            email: payload.email.toLowerCase(),
-        },
+        where: { email: payload.email.toLowerCase() },
     });
     if (existingUser) {
         throw new ApiError(409, 'An account with that email already exists.');
@@ -47,17 +45,17 @@ router.post('/signup', asyncHandler(async (request, response) => {
             role: 'USER',
         },
     });
+    const token = signAuthToken(user);
+    setAuthCookie(response, token);
     response.status(201).json({
-        token: signAuthToken(user),
+        token,
         user: serializeUser(user),
     });
 }));
 router.post('/login', asyncHandler(async (request, response) => {
     const payload = loginSchema.parse(request.body);
     const user = await prisma.user.findUnique({
-        where: {
-            email: payload.email.toLowerCase(),
-        },
+        where: { email: payload.email.toLowerCase() },
     });
     if (!user) {
         throw new ApiError(401, 'Invalid email or password.');
@@ -69,16 +67,20 @@ router.post('/login', asyncHandler(async (request, response) => {
     if (toClientRole(user.role) !== payload.role) {
         throw new ApiError(403, 'That account does not match the selected role.');
     }
+    const token = signAuthToken(user);
+    setAuthCookie(response, token);
     response.json({
-        token: signAuthToken(user),
+        token,
         user: serializeUser(user),
     });
 }));
+router.post('/logout', asyncHandler(async (_request, response) => {
+    clearAuthCookie(response);
+    response.json({ success: true });
+}));
 router.get('/me', authenticate, asyncHandler(async (request, response) => {
     const user = await prisma.user.findUnique({
-        where: {
-            id: request.auth?.userId,
-        },
+        where: { id: request.auth?.userId },
     });
     if (!user) {
         throw new ApiError(401, 'Authentication required.');
@@ -127,7 +129,14 @@ router.post('/reset-password', resetPasswordLimiter, asyncHandler(async (request
     const stored = await prisma.passwordResetToken.findUnique({
         where: { email: normalizedEmail },
     });
-    if (!stored || stored.token !== token || Date.now() > stored.expiresAt.getTime()) {
+    if (!stored || Date.now() > stored.expiresAt.getTime()) {
+        throw new ApiError(400, 'Invalid or expired reset token.');
+    }
+    // Constant-time comparison to prevent timing side-channel attacks
+    const tokenBuffer = Buffer.from(token);
+    const storedBuffer = Buffer.from(stored.token);
+    if (tokenBuffer.length !== storedBuffer.length ||
+        !crypto.timingSafeEqual(tokenBuffer, storedBuffer)) {
         throw new ApiError(400, 'Invalid or expired reset token.');
     }
     const user = await prisma.user.findUnique({
