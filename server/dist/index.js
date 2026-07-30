@@ -1,5 +1,8 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ZodError } from 'zod';
 import { config } from './config.js';
@@ -12,10 +15,13 @@ import storeRouter from './routes/store.js';
 import adminRouter from './routes/admin.js';
 import checkoutRouter, { webhookHandler } from './routes/checkout.js';
 import accountRouter from './routes/account.js';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.use(cookieParser());
 app.use(securityHeaders);
 app.use(cors({
     origin: config.clientOrigin,
+    credentials: true,
 }));
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
 const newsletterLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
@@ -32,36 +38,33 @@ app.use('/api/store', storeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/checkout', checkoutRouter);
 app.use('/api/account', accountRouter);
+// ── Production: serve built frontend ──────────────────────────────────────────
+const clientDistPath = path.resolve(__dirname, '../../dist');
+app.use(express.static(clientDistPath));
+// SPA fallback — any non-API GET that didn't match a file gets index.html
+app.get('*', (_request, response) => {
+    response.sendFile(path.join(clientDistPath, 'index.html'));
+});
+// ── 404 for API routes that don't match above ─────────────────────────────────
 app.use((_request, response) => {
-    response.status(404).json({
-        message: 'Route not found.',
-    });
+    response.status(404).json({ message: 'Route not found.' });
 });
 app.use((error, _request, response, _next) => {
     if (error instanceof ApiError) {
-        response.status(error.statusCode).json({
-            message: error.message,
-        });
+        response.status(error.statusCode).json({ message: error.message });
         return;
     }
     if (error instanceof ZodError) {
-        response.status(400).json({
-            message: 'Validation failed.',
-            issues: error.issues,
-        });
+        response.status(400).json({ message: 'Validation failed.', issues: error.issues });
         return;
     }
     if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-        response.status(404).json({
-            message: 'The requested record could not be found.',
-        });
+        response.status(404).json({ message: 'The requested record could not be found.' });
         return;
     }
     console.error('[ERROR]', error instanceof Error ? error.message : error);
-    response.status(500).json({
-        message: 'Internal server error.',
-    });
+    response.status(500).json({ message: 'Internal server error.' });
 });
 app.listen(config.port, () => {
-    console.log(`MANTHAN API listening on http://localhost:${config.port}`);
+    console.log(`Veloura API listening on http://localhost:${config.port}`);
 });
