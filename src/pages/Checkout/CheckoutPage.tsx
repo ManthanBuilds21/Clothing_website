@@ -19,7 +19,7 @@ import { formatPrice } from '../../utils/format'
 type CheckoutStep = 'address' | 'review' | 'payment'
 
 export default function CheckoutPage() {
-  const { token, isReady } = useAuth()
+  const { isReady } = useAuth()
   const { cart, subtotal, isLoading: storeLoading } = useStore()
   const { products, isLoading: catalogLoading } = useCatalog()
   const toast = useToast()
@@ -64,8 +64,7 @@ export default function CheckoutPage() {
 
   // Load user addresses
   useEffect(() => {
-    if (!token) return
-    getAccountAddresses(token)
+    getAccountAddresses()
       .then((res) => {
         setAddresses(res.addresses)
         if (res.addresses.length > 0) {
@@ -75,7 +74,7 @@ export default function CheckoutPage() {
         }
       })
       .catch(() => toast.error('Could not load saved addresses.'))
-  }, [token, toast])
+  }, [toast])
 
   if (!isReady || storeLoading || catalogLoading) {
     return (
@@ -97,10 +96,9 @@ export default function CheckoutPage() {
 
   const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!token) return
     setIsProcessing(true)
     try {
-      const { address } = await saveAddressRequest(token, addressForm)
+      const { address } = await saveAddressRequest(addressForm)
       setAddresses([address, ...addresses])
       setSelectedAddressId(address.id)
       setShowAddressForm(false)
@@ -113,22 +111,22 @@ export default function CheckoutPage() {
   }
 
   const handleInitiatePayment = async () => {
-    if (!token || !selectedAddressId) return
+    if (!selectedAddressId) return
     setIsProcessing(true)
 
     try {
-      const data = await initiateCheckoutRequest(token, selectedAddressId)
+      const data = await initiateCheckoutRequest(selectedAddressId)
       
       const options = {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: 'MANTHAN',
+        name: 'Veloura',
         description: 'Store Checkout',
         order_id: data.razorpayOrderId,
         handler: async (response: any) => {
           try {
-            const verifyRes = await verifyCheckoutRequest(token, {
+            const verifyRes = await verifyCheckoutRequest({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -163,7 +161,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="page-shell pb-8">
-      <SEO title="MANTHAN | Secure Checkout" description="Complete your order securely." />
+      <SEO title="Veloura | Secure Checkout" description="Complete your order securely." />
       <Reveal className="section-frame campaign-surface overflow-hidden px-5 py-8 sm:px-8 sm:py-10 bg-[var(--cloud)]">
         <p className="eyebrow">Checkout</p>
         <h1 className="mt-5 max-w-4xl text-[3rem] leading-[0.86] sm:text-[5rem] lg:text-[6.5rem]">

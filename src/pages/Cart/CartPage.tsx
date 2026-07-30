@@ -31,7 +31,7 @@ export default function CartPage() {
 
   return (
     <div className="page-shell pb-8">
-      <SEO title="MANTHAN | Shopping Cart" description="Review your selected items and proceed to checkout." />
+      <SEO title="Veloura | Shopping Cart" description="Review your selected items and proceed to checkout." />
       <Reveal className="section-frame">
         <p className="eyebrow">Cart</p>
         <h1 className="mt-5 text-[4rem] leading-[0.86] sm:text-[6rem] lg:text-[8rem]">

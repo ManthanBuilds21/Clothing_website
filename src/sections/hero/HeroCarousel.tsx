@@ -56,7 +56,7 @@ export default function HeroCarousel() {
         <div className="grid min-h-[calc(100vh-9rem)] gap-8 lg:grid-cols-[0.82fr_1.18fr_0.62fr] lg:items-end">
           <div className="relative z-10 flex flex-col justify-between gap-8 pt-16 sm:pt-20 lg:pt-28">
             <div>
-              <p className="eyebrow text-white/60">MANTHAN Clothing / 2026 Drop</p>
+              <p className="eyebrow text-white/60">Veloura / 2026 Drop</p>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeCollection.id}
