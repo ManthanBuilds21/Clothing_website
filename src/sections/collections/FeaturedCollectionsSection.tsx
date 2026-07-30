@@ -12,7 +12,7 @@ export default function FeaturedCollectionsSection() {
         <SectionHeading
           eyebrow="Featured Collections"
           title="Editorial capsules with their own color field and rhythm."
-          description="Each collection extends the same MANTHAN identity through a different emotional lane, letting the product stay central while the palette sets the mood."
+          description="Each collection extends the same Veloura identity through a different emotional lane, letting the product stay central while the palette sets the mood."
         />
       </Reveal>
 

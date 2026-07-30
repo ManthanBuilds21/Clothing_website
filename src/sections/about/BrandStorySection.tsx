@@ -14,7 +14,7 @@ export default function BrandStorySection() {
           <div>
             <p className="eyebrow text-white/[0.45]">Brand Story</p>
             <h2 className="mt-5 max-w-4xl text-[3.8rem] leading-[0.88] sm:text-[5.6rem] lg:text-[7rem]">
-              MANTHAN turns streetwear into a visual campaign language.
+              Veloura turns streetwear into a visual campaign language.
             </h2>
           </div>
 
@@ -32,7 +32,7 @@ export default function BrandStorySection() {
           <div className="ghost-label absolute left-4 top-5 text-black/10 sm:left-6">Journal</div>
           <img
             src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1400&q=80"
-            alt="MANTHAN editorial story"
+            alt="Veloura editorial story"
             loading="lazy"
             className="h-full min-h-[460px] w-full rounded-[1.8rem] object-cover"
           />

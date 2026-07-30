@@ -73,7 +73,7 @@ export default function ProductPage() {
   return (
     <div className="page-shell pb-8">
       <SEO 
-        title={`MANTHAN | ${product.name}`}
+        title={`Veloura | ${product.name}`}
         description={product.shortDescription}
         image={product.images[0]}
       />

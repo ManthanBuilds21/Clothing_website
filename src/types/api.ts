@@ -8,7 +8,6 @@ export interface AuthUser {
 }
 
 export interface AuthSession {
-  token: string
   user: AuthUser
 }
 
@@ -138,4 +137,3 @@ export interface OrderDetail {
   items: OrderItem[]
   address?: Address | null
 }
-
